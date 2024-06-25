@@ -1,0 +1,71 @@
+include:
+  - component: $CI_SERVER_FQDN/components/opentofu/job-templates@0.17.0
+    inputs:
+      version: 0.17.0
+
+stages: 
+  - validate
+  - plan
+  - apply
+  - destroy
+
+variables:
+  PROJECT: $PROJECT 
+  TF_STATE_NAME: $PROJECT
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  USER_DATA_BASE64: $USER_DATA_BASE64
+
+validate:
+  extends: .opentofu:validate
+  stage: validate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger" && $STAGE == "deploy"
+
+plan:
+  extends: .opentofu:plan
+  dependencies:
+    - validate
+  stage: plan
+  variables:
+    PROJECT: $PROJECT 
+    TF_STATE_NAME: $PROJECT
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+    USER_DATA_BASE64: $USER_DATA_BASE64
+  script:
+    - echo $USER_DATA_BASE64
+    - gitlab-tofu plan -var user_data_base64="$USER_DATA_BASE64" -var project_name="$PROJECT"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger" && $STAGE == "deploy"
+
+apply:
+  extends: .opentofu:apply
+  dependencies:
+    - plan
+  stage: apply
+  variables:
+    PROJECT: $PROJECT 
+    TF_STATE_NAME: $PROJECT
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+    USER_DATA_BASE64: $USER_DATA_BASE64
+  script:
+    - echo $USER_DATA_BASE64
+    - gitlab-tofu apply
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger" && $STAGE == "deploy"
+
+destroy:
+  extends: .opentofu:destroy
+  stage: destroy
+  variables:
+    PROJECT: $PROJECT 
+    TF_STATE_NAME: $PROJECT
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+    USER_DATA_BASE64: $USER_DATA_BASE64
+  script:
+    - gitlab-tofu destroy -var user_data_base64="$USER_DATA_BASE64" -var project_name="$PROJECT"s
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger" && $STAGE == "destroy"
