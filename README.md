@@ -1,4 +1,4 @@
-# POC-DEMO-DEPLOY
+# POC-DEMO-DEPLOY - FOR GITLAB_CI
 
 The target of this repo is show you a poc of an idea about to deploy a demo.
 
